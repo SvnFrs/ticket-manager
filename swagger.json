@@ -1,0 +1,649 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Simple Ticket API",
+    "version": "1.0.0",
+    "description": "API for managing users and tickets in a movie booking system"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API v1"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "summary": "Get all users",
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error retrieving users"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new user",
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error creating user"
+          }
+        }
+      }
+    },
+    "/users/id/{id}": {
+      "get": {
+        "summary": "Get user by ID",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Error retrieving user"
+          }
+        }
+      }
+    },
+    "/users/id/{id}/vip": {
+      "patch": {
+        "summary": "Toggle user's VIP status",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User VIP status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User VIP status updated"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Error updating user"
+          }
+        }
+      }
+    },
+    "/users/id/{id}/tickets": {
+      "delete": {
+        "summary": "Delete all tickets for a user",
+        "tags": [
+          "Users",
+          "Tickets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User tickets deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "All tickets for user deleted"
+                    },
+                    "deletedTicket": {
+                      "type": "number",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found or has no tickets"
+          },
+          "500": {
+            "description": "Error deleting user tickets"
+          }
+        }
+      }
+    },
+    "/users/name/{name}": {
+      "get": {
+        "summary": "Get user by name",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Error retrieving user"
+          }
+        }
+      }
+    },
+    "/tickets": {
+      "get": {
+        "summary": "Get all tickets",
+        "tags": [
+          "Tickets"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Ticket"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error retrieving tickets"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new ticket",
+        "tags": [
+          "Tickets"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketInput"
+              },
+              "example": {
+                "movieTitle": "Inception",
+                "cinema": "Cinema City",
+                "showTime": "2023-08-15T19:30:00Z",
+                "seatNumber": "A12",
+                "price": 15.50
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error creating ticket"
+          }
+        }
+      }
+    },
+    "/tickets/available": {
+      "get": {
+        "summary": "Get all unbooked tickets",
+        "tags": [
+          "Tickets"
+        ],
+        "description": "Returns tickets that have not been booked by any user",
+        "responses": {
+          "200": {
+            "description": "A list of unbooked tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Ticket"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No unbooked tickets found"
+          },
+          "500": {
+            "description": "Error retrieving unbooked tickets"
+          }
+        }
+      }
+    },
+    "/tickets/user/id/{id}": {
+      "get": {
+        "summary": "Get tickets for a specific user",
+        "tags": [
+          "Users",
+          "Tickets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User tickets found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "_id": {
+                        "type": "string"
+                      },
+                      "tickets": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Error retrieving user tickets"
+          }
+        }
+      }
+    },
+    "/users/id/{userID}/tickets/id/{ticketID}": {
+      "post": {
+        "summary": "Book a ticket for a user",
+        "tags": [
+          "Users",
+          "Tickets"
+        ],
+        "description": "Adds a ticket to a user's collection of tickets",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          },
+          {
+            "name": "ticketID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Ticket ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket successfully booked for user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User or ticket not found"
+          },
+          "500": {
+            "description": "Error booking ticket"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove a ticket from a user",
+        "tags": [
+          "Users",
+          "Tickets"
+        ],
+        "description": "Removes a specific ticket from a user's collection",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          },
+          {
+            "name": "ticketID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Ticket ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket successfully removed from user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found or ticket not found in user's collection"
+          },
+          "500": {
+            "description": "Error removing ticket"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Unique identifier for the user"
+          },
+          "name": {
+            "type": "string",
+            "description": "User's full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User's phone number"
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of ticket IDs booked by the user"
+          },
+          "isVIP": {
+            "type": "boolean",
+            "default": false,
+            "description": "Indicates if the user has VIP status"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the user was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the user was last updated"
+          }
+        }
+      },
+      "UserInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "User's full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User's phone number"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ],
+        "example": {
+          "name": "John Doe",
+          "email": "john.doe@example.com",
+          "phone": "+1234567890"
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Unique identifier for the ticket"
+          },
+          "movieTitle": {
+            "type": "string",
+            "description": "Title of the movie"
+          },
+          "cinema": {
+            "type": "string",
+            "description": "Name of the cinema"
+          },
+          "showTime": {
+            "type": "string",
+            "description": "Date and time of the movie show"
+          },
+          "seatNumber": {
+            "type": "string",
+            "description": "Seat number in the cinema"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price of the ticket"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the ticket was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time when the ticket was last updated"
+          }
+        },
+        "example": {
+          "_id": "60d21b4667d0d8992e610c85",
+          "movieTitle": "Inception",
+          "cinema": "Cinema City",
+          "showTime": "2023-08-15T19:30:00Z",
+          "seatNumber": "A12",
+          "price": 15.50,
+          "createdAt": "2023-08-01T10:00:00Z",
+          "updatedAt": "2023-08-01T10:00:00Z"
+        }
+      },
+      "TicketInput": {
+        "type": "object",
+        "properties": {
+          "movieTitle": {
+            "type": "string",
+            "description": "Title of the movie"
+          },
+          "cinema": {
+            "type": "string",
+            "description": "Name of the cinema"
+          },
+          "showTime": {
+            "type": "string",
+            "description": "Date and time of the movie show"
+          },
+          "seatNumber": {
+            "type": "string",
+            "description": "Seat number in the cinema"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price of the ticket"
+          }
+        },
+        "required": [
+          "movieTitle",
+          "cinema",
+          "showTime",
+          "seatNumber",
+          "price"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Users",
+      "description": "Operations related to users"
+    },
+    {
+      "name": "Tickets",
+      "description": "Operations related to tickets"
+    }
+  ]
+}
