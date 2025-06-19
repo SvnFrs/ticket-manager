@@ -1,12 +1,12 @@
-import type { ObjectId } from "mongodb";
+import type { ObjectId } from "mongoose";
 
 export interface Ticket {
   _id?: ObjectId;
   movieTitle: string;
   cinema: string;
-  showTime: string;
+  showTime: string | Date;
   seatNumber: string;
   price: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

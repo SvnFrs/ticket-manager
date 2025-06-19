@@ -1,132 +1,113 @@
-import { Collection, ObjectId } from "mongodb";
-import { getDB } from "../config/db.config";
+import mongoose, { Model } from "mongoose";
 import bcrypt from "bcrypt";
-import type { User } from "../types/user.types";
+import type { IUser } from "../schema/user.schema";
+import userSchema from "../schema/user.schema";
+
+const UserMongooseModel: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 
 export class UserModel {
-  private collection: Collection<User>;
+  private model: Model<IUser>;
 
   constructor() {
-    this.collection = getDB().collection<User>("users");
+    this.model = UserMongooseModel;
   }
 
-  async getAll(): Promise<User[]> {
-    return await this.collection.find().toArray();
+  async getAll(): Promise<IUser[]> {
+    return await this.model.find().select("-password").exec();
   }
 
   async getUserTickets(id: string): Promise<any | null> {
-    return await this.collection.find(
-      { _id: new ObjectId(id) },
-      { projection: { tickets: 1 } }
-    ).toArray();
+    return await this.model
+      .findById(id)
+      .select("tickets")
+      .populate("tickets")
+      .exec();
   }
 
-  async getByID(id: string): Promise<User | null> {
-    return await this.collection.findOne(
-      { _id: new ObjectId(id) },
-      { projection: { password: 0 } }
-    );
+  async getByID(id: string): Promise<IUser | null> {
+    return await this.model
+      .findById(id)
+      .select("-password")
+      .exec();
   }
 
-  async getByName(name: string): Promise<User | null> {
-    return this.collection.findOne(
-      { name: { $regex: new RegExp(name, "i") } },
-      { projection: { password: 0 } }
-    );
+  async getByEmail(email: string): Promise<IUser | null> {
+    return await this.model.findOne({ email }).select("-password").exec();
   }
 
-  async getByEmail(email: string): Promise<User | null> {
-    return this.collection.findOne({ email: email });
+  async getByEmailWithPassword(email: string): Promise<IUser | null> {
+    return await this.model.findOne({ email }).exec();
   }
 
-  async getByUsername(name: string): Promise<User | null> {
-    return this.collection.findOne(
-      { username: { $regex: new RegExp(name, "i") } },
-      { projection: { password: 0 } }
-    );
-  }
-
-  async create(User: User): Promise<User | null> {
-    const isEmailExist = await this.getByEmail(User.email);
+  async create(userData: Partial<IUser>): Promise<IUser | null> {
+    const isEmailExist = await this.getByEmail(userData.email!);
 
     if (isEmailExist) {
       throw new Error("Email already exists");
     }
 
-    const createdUser = {
-      ...User,
-      isVIP: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    // Hash password
+    if (userData.password) {
+      const saltRounds = 10;
+      userData.password = await bcrypt.hash(userData.password, saltRounds);
     }
 
-    const result = await this.collection.insertOne(createdUser);
-    return { ...User, _id: result.insertedId };
+    const user = new this.model({
+      ...userData,
+      isVIP: false,
+      isActive: true,
+    });
+
+    return await user.save();
   }
 
   async updateUserStatus(id: string): Promise<any | null> {
-    const user = await this.getByID(id);
+    const user = await this.model.findById(id);
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    const updatedUser = {
-      ...user,
-      isVIP: !user.isVIP,
-    };
+    user.isVIP = !user.isVIP;
+    await user.save();
 
-    const result = await this.collection.
-      updateOne({ _id: new ObjectId(id) }, { $set: updatedUser });
-
-    return result.modifiedCount > 0 ? {
+    return {
       message: "User VIP status updated",
-      user: updatedUser,
-    } : null;
+      user: user.toObject({ transform: (_, ret) => { delete ret.password; return ret; } }),
+    };
+  }
+
+  async updateLastLogin(id: string): Promise<boolean> {
+    const result = await this.model.findByIdAndUpdate(
+      id,
+      { lastLogin: new Date() },
+      { new: true }
+    );
+    return !!result;
   }
 
   async updateUserTickets(userID: string, ticketID: string): Promise<boolean | null> {
-    const user = await this.getByID(userID);
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const updatedUser = {
-      ...user,
-      tickets: user.tickets ? [...user.tickets, new ObjectId(ticketID)] : [new ObjectId(ticketID)],
-    };
-
-    const result = await this.collection.updateOne(
-      { _id: new ObjectId(userID) },
-      { $set: updatedUser }
+    const result = await this.model.findByIdAndUpdate(
+      userID,
+      { $addToSet: { tickets: ticketID } },
+      { new: true }
     );
 
-    return result.modifiedCount > 0;
+    return !!result;
   }
 
   async deleteUserTickets(userID: string, ticketID: string): Promise<boolean | null> {
-    const user = await this.getByID(userID);
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const updatedUser = {
-      ...user,
-      tickets: user.tickets ? user.tickets.filter((ticket) => ticket.toString() !== ticketID) : [],
-    };
-
-    const result = await this.collection.updateOne(
-      { _id: new ObjectId(userID) },
-      { $set: updatedUser }
+    const result = await this.model.findByIdAndUpdate(
+      userID,
+      { $pull: { tickets: ticketID } },
+      { new: true }
     );
 
-    return result.modifiedCount > 0;
+    return !!result;
   }
 
   async deleteAllUserTickets(id: string): Promise<any | null> {
-    const user = await this.getByID(id);
+    const user = await this.model.findById(id);
 
     if (!user) {
       throw new Error("User not found");
@@ -138,19 +119,14 @@ export class UserModel {
       throw new Error("User has no tickets");
     }
 
-    const updatedUser = {
-      ...user,
-      tickets: [],
-    };
+    const ticketCount = user.tickets?.length || 0;
 
-    const result = await this.collection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updatedUser }
-    );
+    user.tickets = [];
+    await user.save();
 
-    return result.modifiedCount > 0 ? {
+    return {
       message: "All tickets for user deleted",
-      deletedTicket: user.tickets?.length,
-    } : null;
+      deletedTicket: ticketCount,
+    };
   }
 }
